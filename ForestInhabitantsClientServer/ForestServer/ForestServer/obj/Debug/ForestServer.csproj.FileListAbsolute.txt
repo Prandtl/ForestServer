@@ -1,0 +1,15 @@
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\ForestServer.exe.config
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\ForestServer.exe
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\ForestServer.pdb
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\obj\Debug\ForestServer.csprojResolveAssemblyReference.cache
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\obj\Debug\ForestServer.exe
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\obj\Debug\ForestServer.pdb
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\NServiceBus.Core.dll
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\NServiceBus.Newtonsoft.Json.dll
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\Newtonsoft.Json.xml
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\NServiceBus.Core.pdb
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\NServiceBus.Core.xml
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\NServiceBus.Newtonsoft.Json.pdb
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\NServiceBus.Newtonsoft.Json.xml
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ForestServer\ForestServer\bin\Debug\App.config

@@ -1,0 +1,8 @@
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ClientVisualisator\ClientVisualisator\bin\Debug\ClientVisualisator.exe.config
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ClientVisualisator\ClientVisualisator\bin\Debug\ClientVisualisator.exe
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ClientVisualisator\ClientVisualisator\bin\Debug\ClientVisualisator.pdb
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ClientVisualisator\ClientVisualisator\obj\Debug\ClientVisualisator.exe
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ClientVisualisator\ClientVisualisator\obj\Debug\ClientVisualisator.pdb
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ClientVisualisator\ClientVisualisator\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ClientVisualisator\ClientVisualisator\bin\Debug\Newtonsoft.Json.xml
+C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\ClientVisualisator\ClientVisualisator\obj\Debug\ClientVisualisator.csprojResolveAssemblyReference.cache
