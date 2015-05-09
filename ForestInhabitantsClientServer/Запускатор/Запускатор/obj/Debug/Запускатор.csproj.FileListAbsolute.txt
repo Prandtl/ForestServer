@@ -1,6 +1,0 @@
-C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\Запускатор\Запускатор\bin\Debug\Запускатор.exe.config
-C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\Запускатор\Запускатор\bin\Debug\Запускатор.exe
-C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\Запускатор\Запускатор\bin\Debug\Запускатор.pdb
-C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\Запускатор\Запускатор\obj\Debug\Запускатор.csprojResolveAssemblyReference.cache
-C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\Запускатор\Запускатор\obj\Debug\Запускатор.exe
-C:\Users\Александр\Desktop\My projects\ForestInhabitantsClientServer\Запускатор\Запускатор\obj\Debug\Запускатор.pdb
