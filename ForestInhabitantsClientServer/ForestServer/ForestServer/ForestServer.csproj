@@ -63,6 +63,9 @@
     <Compile Include="ForestObjects\Life.cs" />
     <Compile Include="ForestObjects\Trap.cs" />
     <Compile Include="ForestServer.cs" />
+    <Compile Include="Game.cs" />
+    <Compile Include="GameMode.cs" />
+    <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings.cs" />

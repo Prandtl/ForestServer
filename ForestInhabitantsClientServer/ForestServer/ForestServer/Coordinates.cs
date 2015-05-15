@@ -32,5 +32,10 @@ namespace ForestServer
             var otherCoordinates = obj as Coordinates;
             return (otherCoordinates.X == X) && (otherCoordinates.Y == Y);
         }
+
+        public override string ToString()
+        {
+            return string.Format("({0},{1})", X, Y);
+        }
     }
 }

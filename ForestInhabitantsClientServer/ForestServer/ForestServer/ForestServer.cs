@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 using System.Collections.Generic;
 using System.IO;
@@ -18,16 +19,25 @@ namespace ForestServer
 {
     public class ForestServer
     {
-        private Settings settings;
-        private readonly List<Socket> players = new List<Socket>();
-        private readonly List<Socket> visualisators = new List<Socket>();
-        private readonly List<Inhabitant> reservedInhabitants = new List<Inhabitant>(); 
-        private readonly List<Thread> bots = new List<Thread>();
+        private List<Tuple<string,Settings>> settings = new List<Tuple<string, Settings>>();
+        private readonly List<Player> players = new List<Player>();
+        private readonly List<Socket> visualisators = new List<Socket>();       
+        private readonly List<Thread> games = new List<Thread>();
 
-        public ForestServer(string settingsPath)
+        public ForestServer(GameMode mode)
         {
-            //XmlLoader.SaveData(settingsPath, LoadSettings(@"Maps\Maze3.txt", 3, 3));
-            settings = XmlLoader.DeserializeForest(settingsPath);
+            if (mode == GameMode.Tournament)
+            {
+                for (int i = 1; i <= 2; i++)
+                {
+                    var settingsPath = string.Format(@"settings_{0}", DateTime.Now);
+                    var rnd = new Random();
+                    XmlLoader.SaveData(settingsPath,
+                        LoadSettings(string.Format(@"Maps\Maze{0}.txt", i), 2, rnd.Next(0,3)));
+                    settings.Add(Tuple.Create(settingsPath,XmlLoader.DeserializeSettings(settingsPath)));
+                    Thread.Sleep(10);
+                }
+            }
         }
 
         public void Start(string ipAddr,int port)
@@ -38,47 +48,32 @@ namespace ForestServer
             listener.Listen(10);
             Console.WriteLine("Прослушиваю порт {0}:",port);
             WaitConnections(listener);
-            SendForestToVisualisators();
-            foreach (var player in players)
+            for (int i=0;i<settings.Count;i++)
             {
-                reservedInhabitants.Add(BeforeStart(player));
-                bots.Add(new Thread(Worker));
+                var game = new Game(true,settings[i].Item2, visualisators[i], players[i],players[i+1]);
+                games.Add(new Thread(game.Start));
             }
-            for (var i = 0; i < reservedInhabitants.Count; i++)
-                bots[i].Start(i);              
-            while (bots.Any(worker => worker.IsAlive)) { }
-            Thread.Sleep(1000);
-            foreach (var vis in visualisators)
-            {
-                vis.Shutdown(SocketShutdown.Both);
-                vis.Close();
-            }
-        }
-
-        private void Worker(object i)
-        {
-            var iLocal = (int) i;
-            lock (reservedInhabitants)
-            {
-                AfterStart(reservedInhabitants[iLocal], players[iLocal]);
-            }
-        }
+            foreach (var game in games)
+                game.Start();     
+            while (games.Any(worker => worker.IsAlive)) { }
+        }      
 
         private void WaitConnections(Socket listener)
         {
-            while (visualisators.Count == 0 || players.Count != settings.CountOfPlayers)
+            while (visualisators.Count != 2 || players.Count != 4)
             {
                 var buffer = new byte[128];
                 var socket = listener.Accept();
                 if (socket.Connected)
                 {
                     socket.Receive(buffer);
-                    if (Encoding.UTF8.GetString(buffer).Replace("\0", "").Equals("I am player"))
+                    var input = Encoding.UTF8.GetString(buffer).Replace("\0", "").Split(' ');
+                    if (input[0].ToLower().Equals("player"))
                     {
-                        Console.WriteLine("Игрок подключился");
-                        players.Add(socket);
+                        Console.WriteLine("Игрок {0} подключился",input[1]);
+                        players.Add(new Player(input[1],socket));
                     }
-                    else if (Encoding.UTF8.GetString(buffer).Replace("\0", "").Equals("I am visualisator"))
+                    else if (input[0].ToLower().Equals("visualisator"))
                     {
                         Console.WriteLine("Визуализатор подключился");
                         visualisators.Add(socket);
@@ -86,165 +81,35 @@ namespace ForestServer
                 }
             }
         }
-        private void SendForestToVisualisators()
-        {
-            byte[] buffer;
-            XmlLoader.SaveData("forestNow.xml", settings.Forest);
-            using (var fs = new StreamReader("forestNow.xml"))
-            {
-                buffer = Encoding.UTF8.GetBytes(fs.ReadToEnd());
-            }
-            foreach (var vis in visualisators)
-                vis.Send(buffer, buffer.Length, SocketFlags.None);
-        }
 
-        private Inhabitant BeforeStart(Socket player)
-        {
-            var buffer = new byte[1024];
-            player.Send(Encoding.UTF8.GetBytes(string.Join(" ", settings.Forest.Inhabitants
-                .Where(y => !reservedInhabitants.Contains(y))
-                .Select(x => x.Name)
-                .ToArray())));
-            player.Receive(buffer);
-            var name = Encoding.UTF8.GetString(buffer).Replace("\0", "");
-            var selectedInhabitant = settings.Forest.Inhabitants
-                .First(x => x.Name.Equals(name));
-            var serializedInhabitant = JsonConvert.SerializeObject(selectedInhabitant);
-            player.Send(Encoding.UTF8.GetBytes(serializedInhabitant));
-            Thread.Sleep(50);
-            var size = string.Format("{0} {1}", settings.Forest.Map.Length, settings.Forest.Map[0].Length);
-            player.Send(Encoding.UTF8.GetBytes(size));
-            return selectedInhabitant;
-        }
-
-        private void AfterStart(Inhabitant inhabitant,Socket player)
-        {
-            while (!inhabitant.Place.Equals(inhabitant.Purpose))
-            {
-                var buffer = new byte[32];
-                player.Receive(buffer);
-                var data = Encoding.UTF8.GetString(buffer
-                    .Where(y => y != 0)
-                    .ToArray());
-                var command = JsonConvert.DeserializeObject<Coordinates>(data);
-                Thread.Sleep(200);
-                if (settings.Forest.Move(ref inhabitant, command))
-                {
-                    Thread.Sleep(50);
-                    if (inhabitant.Place.Equals(inhabitant.Purpose))
-                        break;
-                    if (inhabitant.Life <= 0)
-                    {                      
-                        EndConnectionWithPlayer(player);
-                        return;
-                    }
-                    SendForestToVisualisators();
-                    SendData(inhabitant, player);
-                    if (bots.Count(worker => worker.IsAlive) > 1)
-                    {
-                        Monitor.Pulse(reservedInhabitants);
-                        Monitor.Wait(reservedInhabitants);
-                    }
-                    continue;
-                }
-                SendData(inhabitant, player);
-            }
-            settings.Forest.DestroyInhabitant(ref inhabitant);
-            EndConnectionWithPlayer(player);
-        }
-
-        private void SendData(Inhabitant inhabitant, Socket player)
-        {
-            var buffer = new byte[8192];
-            var visObjects = GetVisibleObjects(inhabitant);
-            var formatter = new XmlSerializer(typeof(ForestObject[]), new[] { typeof(Bush), typeof(Trap), typeof(Inhabitant), typeof(Life), typeof(Footpath) });
-            using (var fs = new FileStream("visObj.xml", FileMode.Create))
-            {
-                formatter.Serialize(fs, visObjects);
-            }
-            using (var fs = new FileStream("visObj.xml", FileMode.Open))
-            {
-                fs.Read(buffer, 0, buffer.Length);
-            }
-            File.Delete("visObj.xml");
-            var buff = buffer.Where(x=>x!=0).ToList();
-            var serializedInhabitant = JsonConvert.SerializeObject(inhabitant);
-            buff.AddRange(Encoding.UTF8.GetBytes("###"));
-            buff.AddRange(Encoding.UTF8.GetBytes(serializedInhabitant));
-            player.Send(buff.ToArray());
-        }
-
-        private ForestObject[] GetVisibleObjects(Inhabitant inhabitant)
-        {
-            var neighbours = new List<Coordinates>();
-            var queue = new Queue<Coordinates>();
-            queue.Enqueue(inhabitant.Place);
-            while (queue.Count != 0)
-            {
-                var top = queue.Dequeue();
-                foreach (var neighbour in GetNeighbours(top).Where(x => !neighbours.Contains(x)))
-                {
-                    if (Math.Abs(neighbour.Substract(inhabitant.Place).X) + Math.Abs(neighbour.Substract(inhabitant.Place).Y) <= settings.Visible)
-                    {
-                        queue.Enqueue(neighbour);
-                        neighbours.Add(neighbour);
-                    }
-                }
-            }
-            neighbours.Remove(inhabitant.Place);
-            return neighbours.Select(neigh => settings.Forest.Map[neigh.Y][neigh.X]).ToArray();
-        }
-
-        private IEnumerable<Coordinates> GetNeighbours(Coordinates top)
-        {
-            var neigh = new List<Coordinates>();
-            if (!OutOfBorders(top.Add(MoveCommand.Right)))
-                neigh.Add(top.Add(MoveCommand.Right));
-            if (!OutOfBorders(top.Add(MoveCommand.Up)))
-                neigh.Add(top.Add(MoveCommand.Up));
-            if (!OutOfBorders(top.Add(MoveCommand.Left)))
-                neigh.Add(top.Add(MoveCommand.Left));
-            if (!OutOfBorders(top.Add(MoveCommand.Down)))
-                neigh.Add(top.Add(MoveCommand.Down));
-            return neigh;
-        }
-
-        private void EndConnectionWithPlayer(Socket player)
-        {
-            SendForestToVisualisators();
-            player.Shutdown(SocketShutdown.Both);
-            player.Close();
-            Monitor.Pulse(reservedInhabitants);
-        }
-
-        private void CreateInhabitantsOnTheRandomPlaces()
+        private void CreateInhabitantsOnTheRandomPlaces(Settings options)
         {
             var rnd = new Random();
-            for (var i = 0; i < settings.CountOfPlayers; i++)
+            for (var i = 0; i < options.CountOfPlayers; i++)
             {
                 var canEnterObjects = new List<ForestObject>();
-                foreach (var rowForestObjects in settings.Forest.Map)
+                foreach (var rowForestObjects in options.Forest.Map)
                     canEnterObjects.AddRange(rowForestObjects.Where(forestObject => forestObject.CanMove));
                 var randomObject = canEnterObjects[rnd.Next(canEnterObjects.Count)];
                 canEnterObjects.Remove(randomObject);
                 var purpose = canEnterObjects[rnd.Next(canEnterObjects.Count)];
                 canEnterObjects.Add(randomObject);
-                var inhabitant = new Inhabitant(RandomStringGenerator(rnd.Next(4, 8)), rnd.Next(2, 4));
-                settings.Forest.CreateInhabitant(ref inhabitant, randomObject.Place, purpose.Place);
+                var inhabitant = new Inhabitant(RandomStringGenerator(rnd.Next(4, 8)), 5);
+                options.Forest.CreateInhabitant(ref inhabitant, randomObject.Place, purpose.Place);
             }
         }
 
 
-        private Settings LoadSettings(string path,int playersCount, int visible)
+        private Settings LoadSettings(string forestPath,int playersCount, int visible)
         {
-            settings = new Settings
+            var options = new Settings
             {
-                Forest = new ForestLoader(new StreamReader(path)).Load(),
+                Forest = new ForestLoader(new StreamReader(forestPath)).Load(),
                 CountOfPlayers = playersCount, 
                 Visible = visible
             };
-            CreateInhabitantsOnTheRandomPlaces();
-            return settings;
+            CreateInhabitantsOnTheRandomPlaces(options);
+            return options;
         }
 
         private static string RandomStringGenerator(int length)
@@ -260,13 +125,6 @@ namespace ForestServer
                 chars[i] = validChars[rnd.Next(0, 61)];
             }
             return (new string(chars));
-        }
-
-        private bool OutOfBorders(Coordinates position)
-        {
-            if (position == null)
-                return true;
-            return position.X < 0 || position.Y >= settings.Forest.Map.Length || position.Y < 0 || position.X >= settings.Forest.Map[0].Length;
         }
     }
 }

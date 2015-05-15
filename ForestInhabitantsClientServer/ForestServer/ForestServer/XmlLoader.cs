@@ -25,7 +25,7 @@ namespace ForestServer
                 }
             }
         }
-        public static Settings DeserializeForest(string path)
+        public static Settings DeserializeSettings(string path)
         {
             Settings settings;
             using (var fs = new FileStream(path, FileMode.Open))

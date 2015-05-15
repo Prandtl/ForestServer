@@ -25,23 +25,36 @@ namespace ClientPlayer
             if (socket.Connected)
             {
                 Inhabitant inhabitant;
-                BeforeStart(socket, out inhabitant);
+                BeforeStart("Alexander",socket, out inhabitant);
                 AfterStart(socket,inhabitant);
             }
         }
 
-        private static void BeforeStart(Socket socket, out Inhabitant inhabitant)
+        private static void BeforeStart(string name,Socket socket, out Inhabitant inhabitant)
         {
-            var buffer = new byte[4096];
-            socket.Send(Encoding.UTF8.GetBytes("I am player"));
-            var rnd = new Random();
+            var buffer = new byte[128];
+            socket.Send(Encoding.UTF8.GetBytes(string.Format("player {0}",name)));
             socket.Receive(buffer);
-            var inhabitants = Encoding.UTF8.GetString(buffer).Split(new[] { ' ', '\0' }, StringSplitOptions.RemoveEmptyEntries);
-            var myInhabitant = inhabitants[rnd.Next(0, inhabitants.Length)];
-            socket.Send(Encoding.UTF8.GetBytes(myInhabitant));
-            socket.Receive(buffer);
-            var serInhabitant = Encoding.UTF8.GetString(buffer).Replace("\0", "");
-            inhabitant = JsonConvert.DeserializeObject<Inhabitant>(serInhabitant, new ForestObjectConverter());
+            var input = Encoding.UTF8.GetString(buffer).Split(' ');
+            var place = new Coordinates(int.Parse(input[1][2].ToString()), int.Parse(input[1][4].ToString()));
+            inhabitant = new Inhabitant(name, int.Parse(input[4]))
+            {
+                Place = place,
+                PrevObject = GetPrevObj(input[5],place),
+                Purpose = new Coordinates(int.Parse(input[2][2].ToString()), int.Parse(input[2][4].ToString()))
+            };
+        }
+
+        private static ForestObject GetPrevObj(string obj,Coordinates place)
+        {
+            switch (obj)
+            {
+                case "Trap":
+                    return new Trap(place);
+                case "Footpath":
+                    return new Footpath(place);
+            }
+            return null;
         }
 
         private static void AfterStart(Socket socket,Inhabitant inhabitant)

@@ -26,7 +26,7 @@ namespace ClientVisualisator
             }
             if (socket.Connected)
             {
-                socket.Send(Encoding.UTF8.GetBytes("I am visualisator"));
+                socket.Send(Encoding.UTF8.GetBytes("visualisator"));
                 while (socket.Connected)
                 {
                     try
